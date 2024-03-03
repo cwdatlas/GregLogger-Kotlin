@@ -13,14 +13,14 @@ class HorizonLog {
     @GeneratedValue
     var id: Long? = null
 
-    @Column(length = 10, nullable = false)
+    @Column(length = 10, nullable = false, name = "date")
     lateinit var date: Date
-    @Column(length = 40, nullable = false)
+    @Column(length = 40, nullable = false, name = "machine")
     lateinit var machine: String
-    @Column(length = 40, nullable = false)
+    @Column(length = 40, nullable = false, name = "machine_id")
     lateinit var machineID: String
-    @Column(length = 100, nullable = false)
-    lateinit var massage: String
+    @Column(length = 100, nullable = false, name = "message")
+    lateinit var message: String
     // TODO Change to enum
     /*
     Codes:
@@ -31,7 +31,7 @@ class HorizonLog {
     DISABLED -> machine disabled
     FORCE_DISABLED -> machine disabled due to a non-optimal situation (starved usually)
      */
-    @Column(length = 10, nullable = false)
+    @Column(length = 10, nullable = false, name = "code")
     lateinit var operationCode: String
 
 }

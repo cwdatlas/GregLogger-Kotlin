@@ -13,7 +13,7 @@ class HorizonLog {
     @GeneratedValue
     var id: Long? = null
 
-    @Column(length = 10, nullable = false, name = "date")
+    @Column(length = 16, nullable = false, name = "date")
     lateinit var date: Date
     @Column(length = 40, nullable = false, name = "machine")
     lateinit var machine: String
@@ -31,7 +31,7 @@ class HorizonLog {
     DISABLED -> machine disabled
     FORCE_DISABLED -> machine disabled due to a non-optimal situation (starved usually)
      */
-    @Column(length = 10, nullable = false, name = "code")
+    @Column(length = 20, nullable = false, name = "code")
     lateinit var operationCode: String
 
 }

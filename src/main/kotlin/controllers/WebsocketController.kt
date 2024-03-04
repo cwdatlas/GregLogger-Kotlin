@@ -25,65 +25,75 @@ class WebsocketController {
     private val LOGGER: Logger = Logger.getLogger(this::class.toString())
 
     @OnOpen
-    fun onOpen(session: Session, @PathParam("logertype") loggerType: String){
-        if(loggerType == "reader") {
+    fun onOpen(session: Session, @PathParam("logertype") loggerType: String) {
+        if (loggerType == "reader") {
             readers.add(session)
             LOGGER.info("$loggerType connected to websocket")
-        }
-        else if(loggerType == "writer"){
+        } else if (loggerType == "writer") {
             writers.add(session)
             LOGGER.info("$loggerType connected to websocket")
-        }
-        else{
-            session.close(CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Logger type must be either 'reader' or 'writer'"))
+        } else {
+            session.close(
+                CloseReason(
+                    CloseReason.CloseCodes.VIOLATED_POLICY,
+                    "Logger type must be either 'reader' or 'writer'"
+                )
+            )
         }
     }
 
     @OnClose
-    fun onClose(session: Session, @PathParam("logertype") loggerType: String){
-        if(loggerType == "reader") {
+    fun onClose(session: Session, @PathParam("logertype") loggerType: String) {
+        if (loggerType == "reader") {
             readers.remove(session)
             LOGGER.info("$loggerType disconnected from websocket")
-        }
-        else if(loggerType == "writer"){
+        } else if (loggerType == "writer") {
             writers.remove(session)
             LOGGER.info("$loggerType disconnected from websocket")
-        }
-        else{
-            session.close(CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Logger type must be either 'reader' or 'writer'"))
+        } else {
+            session.close(
+                CloseReason(
+                    CloseReason.CloseCodes.VIOLATED_POLICY,
+                    "Logger type must be either 'reader' or 'writer'"
+                )
+            )
         }
     }
 
     @OnError
-    fun onError(session: Session, @PathParam("logertype") loggerType: String){
-        if(loggerType == "reader") {
+    fun onError(session: Session, @PathParam("logertype") loggerType: String, throwable: Throwable) {
+        if (loggerType == "reader") {
             readers.remove(session)
             LOGGER.info("$loggerType disconnected from websocket due to error")
-        }
-        else if(loggerType == "writer"){
+        } else if (loggerType == "writer") {
             writers.remove(session)
             LOGGER.info("$loggerType disconnected from websocket due to error")
-        }
-        else{
-            session.close(CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "Logger type must be either 'reader' or 'writer'"))
+        } else {
+            session.close(
+                CloseReason(
+                    CloseReason.CloseCodes.VIOLATED_POLICY,
+                    "Logger type must be either 'reader' or 'writer'"
+                )
+            )
         }
     }
 
     @OnMessage
-    fun onMessage(session: Session, log: HorizonLog, @PathParam("logertype") loggerType: String){
-        if(loggerType == "writer"){
+    fun onMessage(session: Session, log: HorizonLog, @PathParam("logertype") loggerType: String) {
+        if (loggerType == "writer") {
             if (log == null || log.id != null) {
                 throw WebApplicationException("Id was invalidly set on request.", 422)
             }
             LOGGER.info("Log sent by session: $session")
             session.asyncRemote.sendObject(
                 Panache.withTransaction { logRepo.persist(log) }
-                .replaceWith{ Response.ok(log).status(Response.Status.CREATED).build()})
+                    .replaceWith { Response.ok(log).status(Response.Status.CREATED).build() })
 
-
+            broadcast(log, readers)
         }
 
     }
+
     private fun broadcast(logs: HorizonLog, sessions: ConcurrentLinkedQueue<Session>) {
         sessions.forEach {
             it.asyncRemote.sendObject(logs, fun(it: SendResult) {

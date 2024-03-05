@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quarkus Chat!</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly.min.css" rel="stylesheet"
+          type="text/css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/css/patternfly-additions.min.css" rel="stylesheet"
+          type="text/css">
+
+    <style>
+        #chat {
+            resize: none;
+            overflow: hidden;
+            min-height: 300px;
+            max-height: 300px;
+        }
+    </style>
+</head>
+
+<body>
+<nav class="navbar navbar-default navbar-pf" role="navigation">
+    <div class="navbar-header">
+        <a class="navbar-brand" href="/">
+            <p><strong>>> Horizon Logs, Logger for GregTech New Horizons</strong></p>
+        </a>
+    </div>
+</nav>
+<div class="row">
+    <textarea class="col-md-8" id="chat"></textarea>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/patternfly/3.24.0/js/patternfly.min.js"></script>
+
+<script type="text/javascript">
+    var connected = false;
+    var socket;
+
+    var connect = function () {
+        if (!connected) {
+            socket = new WebSocket("ws://" + location.host + "/logs/");
+            socket.onopen = function () {
+                connected = true;
+                console.log("Connected to the web socket");
+                $("#connect").attr("disabled", true);
+            };
+            socket.onmessage = function (m) {
+                console.log("Got message: " + m.data);
+                $("#chat").append(m.data + "\n");
+                scrollToBottom();
+            };
+        }
+    };
+
+    var scrollToBottom = function () {
+        $('#chat').scrollTop($('#chat')[0].scrollHeight);
+    };
+
+</script>
+</body>
+
+</html>

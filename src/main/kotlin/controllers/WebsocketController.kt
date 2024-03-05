@@ -10,97 +10,38 @@ import jakarta.ws.rs.WebApplicationException
 import jakarta.ws.rs.core.Response
 import models.HorizonLog
 import repos.LogRepo
+import services.WebsocketService
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.Logger
 
 
-@ServerEndpoint("/logs/{logertype}")
+@ServerEndpoint("/logs")
 @ApplicationScoped
 class WebsocketController {
-
     @Inject
-    lateinit var logRepo: LogRepo
-    private var readers: ConcurrentLinkedQueue<Session> = ConcurrentLinkedQueue()
-    private var writers: ConcurrentLinkedQueue<Session> = ConcurrentLinkedQueue()
+    lateinit var websocketService: WebsocketService
     private val LOGGER: Logger = Logger.getLogger(this::class.toString())
 
+    /**
+     * onOpen starts a loop that sends the entire contents of the database to the connected webclient
+     */
     @OnOpen
-    fun onOpen(session: Session, @PathParam("logertype") loggerType: String) {
-        if (loggerType == "reader") {
-            readers.add(session)
-            LOGGER.info("$loggerType connected to websocket")
-        } else if (loggerType == "writer") {
-            writers.add(session)
-            LOGGER.info("$loggerType connected to websocket")
-        } else {
-            session.close(
-                CloseReason(
-                    CloseReason.CloseCodes.VIOLATED_POLICY,
-                    "Logger type must be either 'reader' or 'writer'"
-                )
-            )
-        }
+    fun onOpen(session: Session) {
+        websocketService.readers.add(session)
+        LOGGER.info("Reader connected to websocket at session: $session")
+        // Sends all logs to the user that are stored in the database
+        websocketService.initLogs(session)
     }
 
     @OnClose
-    fun onClose(session: Session, @PathParam("logertype") loggerType: String) {
-        if (loggerType == "reader") {
-            readers.remove(session)
-            LOGGER.info("$loggerType disconnected from websocket")
-        } else if (loggerType == "writer") {
-            writers.remove(session)
-            LOGGER.info("$loggerType disconnected from websocket")
-        } else {
-            session.close(
-                CloseReason(
-                    CloseReason.CloseCodes.VIOLATED_POLICY,
-                    "Logger type must be either 'reader' or 'writer'"
-                )
-            )
-        }
+    fun onClose(session: Session) {
+        websocketService.readers.remove(session)
+        LOGGER.info("Reader disconnected from websocket with session: $session")
     }
 
     @OnError
     fun onError(session: Session, @PathParam("logertype") loggerType: String, throwable: Throwable) {
-        if (loggerType == "reader") {
-            readers.remove(session)
-            LOGGER.info("$loggerType disconnected from websocket due to error")
-        } else if (loggerType == "writer") {
-            writers.remove(session)
-            LOGGER.info("$loggerType disconnected from websocket due to error")
-        } else {
-            session.close(
-                CloseReason(
-                    CloseReason.CloseCodes.VIOLATED_POLICY,
-                    "Logger type must be either 'reader' or 'writer'"
-                )
-            )
+        LOGGER.info("$loggerType disconnected from websocket due to error")
+        session.close()
         }
     }
-
-    @OnMessage
-    fun onMessage(session: Session, log: HorizonLog, @PathParam("logertype") loggerType: String) {
-        if (loggerType == "writer") {
-            if (log == null || log.id != null) {
-                throw WebApplicationException("Id was invalidly set on request.", 422)
-            }
-            LOGGER.info("Log sent by session: $session")
-            session.asyncRemote.sendObject(
-                Panache.withTransaction { logRepo.persist(log) }
-                    .replaceWith { Response.ok(log).status(Response.Status.CREATED).build() })
-
-            broadcast(log, readers)
-        }
-
-    }
-
-    private fun broadcast(logs: HorizonLog, sessions: ConcurrentLinkedQueue<Session>) {
-        sessions.forEach {
-            it.asyncRemote.sendObject(logs, fun(it: SendResult) {
-                if (it.exception != null) {
-                    println("Unable to send message: ${it.exception}")
-                }
-            })
-        }
-    }
-}

@@ -4,7 +4,7 @@ import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
-import java.util.Date
+import java.time.LocalDate
 
 @Entity
 class HorizonLog {
@@ -13,7 +13,7 @@ class HorizonLog {
     var id: Long? = null
 
     @Column(length = 16, nullable = false, name = "date")
-    lateinit var date: Date
+    lateinit var date: LocalDate
     @Column(length = 40, nullable = false, name = "machine")
     lateinit var machine: String
     @Column(length = 40, nullable = false, name = "machine_id")

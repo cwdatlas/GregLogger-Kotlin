@@ -30,7 +30,7 @@ class WebsocketController {
         websocketService.readers.add(session)
         LOGGER.info("Reader connected to websocket at session: $session")
         // Sends all logs to the user that are stored in the database
-        websocketService.initLogs(session)
+        websocketService.initLogs(session).subscribe()
     }
 
     @OnClose
@@ -40,8 +40,8 @@ class WebsocketController {
     }
 
     @OnError
-    fun onError(session: Session, @PathParam("logertype") loggerType: String, throwable: Throwable) {
-        LOGGER.info("$loggerType disconnected from websocket due to error")
+    fun onError(session: Session, throwable: Throwable) {
+        LOGGER.info("session ${session.id} disconnected from websocket due to error: $throwable")
         session.close()
         }
     }

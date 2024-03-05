@@ -4,22 +4,19 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import org.jboss.resteasy.reactive.DateFormat
-import java.util.*
+import java.time.LocalDate
+
 
 const val codes =
-    "ENABLED -> machine enabled \n" +
-            "STARTED -> machine started normally \n" +
-            "RUNNING -> machine running normally \n" +
-            "STOPPED -> machine stopped doing work \n" +
-            "DISABLED -> machine disabled \n" +
+    "ENABLED -> machine enabled, " +
+            "STARTED -> machine started normally, " +
+            "RUNNING -> machine running normally, " +
+            "STOPPED -> machine stopped doing work, " +
+            "DISABLED -> machine disabled, " +
             "FORCE_DISABLED -> machine disabled due to a non-optimal situation (starved usually)"
 class LogApi {
-    @NotNull
-    @NotBlank(message = "Date must be included with a format of 'yyyy-dd-mm'")
-    @Size(max = 16, message = "Date must be less than 16 characters")
-    @Size(min = 10, message = "Date must be larger than 9 characters")
-    @setparam:DateFormat(pattern = "yyyy-DD-MM")
-    lateinit var date: Date
+    @setparam:DateFormat(pattern = "YYYY-MM-DD")
+    lateinit var date: LocalDate
 
     @NotNull(message = "machine must be included")
     @NotBlank(message = "machine must not be blank")

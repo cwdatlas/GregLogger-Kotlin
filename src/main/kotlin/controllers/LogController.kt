@@ -44,14 +44,4 @@ class LogController {
         return Panache.withTransaction { logService.persist((validLog)) }
             .replaceWith(Response.ok(log).status(Response.Status.CREATED).build())
     }
-
-    @DELETE
-    @Path("{id}")
-    fun delete(id: Long): Uni<Response> {
-        return Panache.withTransaction { logService.deleteByID(id) }
-            .map { deleted ->
-                if (deleted) Response.ok().status(Response.Status.NO_CONTENT).build()
-                else Response.ok().status(Response.Status.NOT_FOUND).build()
-            }
-    }
 }

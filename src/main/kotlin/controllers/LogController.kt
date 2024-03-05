@@ -14,39 +14,41 @@ import jakarta.ws.rs.core.Response
 import models.HorizonLog
 import models.LogApi
 import repos.LogRepo
+import services.LogService
 import services.WebsocketService
 
 @ApplicationScoped
-@Path("/logs/")
+@Path("/logs")
 class LogController {
 
     @Inject
-    lateinit var logs: LogRepo
+    lateinit var logService: LogService
+    @Inject
     lateinit var websocketService: WebsocketService
 
     @GET
     fun get(): Uni<List<HorizonLog>> {
-        return logs.listAll(Sort.by("date"))
+        return logService.listAll()
     }
 
     @POST
     fun add(@Valid log: LogApi): Uni<Response> {
         val validLog = HorizonLog()
         validLog.date = log.date
-        validLog.message = log.machine
+        validLog.machine = log.machine
         validLog.machineID = log.machineID
         validLog.operationCode = log.operationCode
         validLog.message = log.message
 
         websocketService.broadcast(validLog, websocketService.readers)
-        return Panache.withTransaction { logs.persist((validLog)) }
+        return Panache.withTransaction { logService.persist((validLog)) }
             .replaceWith(Response.ok(log).status(Response.Status.CREATED).build())
     }
 
     @DELETE
     @Path("{id}")
     fun delete(id: Long): Uni<Response> {
-        return Panache.withTransaction { logs.deleteById(id) }
+        return Panache.withTransaction { logService.deleteByID(id) }
             .map { deleted ->
                 if (deleted) Response.ok().status(Response.Status.NO_CONTENT).build()
                 else Response.ok().status(Response.Status.NOT_FOUND).build()

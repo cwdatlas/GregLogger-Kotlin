@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 import org.jboss.resteasy.reactive.DateFormat
-import java.time.LocalDate
+import java.util.*
 
 // codes provide a constant set of feedback for the user
 const val codes =
@@ -24,7 +24,7 @@ const val codes =
 class LogApi {
     // Dates must be in this pattern if they are not, then the data will be sent back signaling that the data is wrong
     @setparam:DateFormat(pattern = "YYYY-MM-DD")
-    lateinit var date: LocalDate
+    lateinit var date: Date
 
     @NotNull(message = "machine must be included")
     @NotBlank(message = "machine must not be blank")

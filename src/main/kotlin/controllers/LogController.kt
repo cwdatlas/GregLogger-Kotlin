@@ -5,14 +5,16 @@ import io.quarkus.panache.common.Sort
 import io.smallrye.mutiny.Uni
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
+import jakarta.validation.Valid
 import jakarta.ws.rs.DELETE
 import jakarta.ws.rs.GET
 import jakarta.ws.rs.POST
 import jakarta.ws.rs.Path
-import jakarta.ws.rs.WebApplicationException
 import jakarta.ws.rs.core.Response
 import models.HorizonLog
+import models.LogApi
 import repos.LogRepo
+import services.WebsocketService
 
 @ApplicationScoped
 @Path("/logs/")
@@ -20,6 +22,7 @@ class LogController {
 
     @Inject
     lateinit var logs: LogRepo
+    lateinit var websocketService: WebsocketService
 
     @GET
     fun get(): Uni<List<HorizonLog>> {
@@ -27,10 +30,16 @@ class LogController {
     }
 
     @POST
-    fun add(log: HorizonLog): Uni<Response> {
-        if (log == null || log.id != null)
-            throw WebApplicationException("Id was invalidly set on request.", 422)
-        return Panache.withTransaction { logs.persist((log)) }
+    fun add(@Valid log: LogApi): Uni<Response> {
+        val validLog = HorizonLog()
+        validLog.date = log.date
+        validLog.message = log.machine
+        validLog.machineID = log.machineID
+        validLog.operationCode = log.operationCode
+        validLog.message = log.message
+
+        websocketService.broadcast(validLog, websocketService.readers)
+        return Panache.withTransaction { logs.persist((validLog)) }
             .replaceWith(Response.ok(log).status(Response.Status.CREATED).build())
     }
 

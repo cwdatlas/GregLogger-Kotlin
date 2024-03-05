@@ -1,47 +1,53 @@
 package controllers
 
-import io.quarkus.hibernate.reactive.panache.Panache
 import jakarta.enterprise.context.ApplicationScoped
 import jakarta.inject.Inject
-import jakarta.websocket.*
-import jakarta.websocket.server.PathParam
+import jakarta.websocket.OnClose
+import jakarta.websocket.OnError
+import jakarta.websocket.OnOpen
+import jakarta.websocket.Session
 import jakarta.websocket.server.ServerEndpoint
-import jakarta.ws.rs.WebApplicationException
-import jakarta.ws.rs.core.Response
-import models.HorizonLog
-import repos.LogRepo
 import services.WebsocketService
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.logging.Logger
 
-
+/**
+ * @author Aidan Scott
+ * WebsocketController provides a websocket for constant updates on the incoming logs
+ */
 @ServerEndpoint("/logs")
 @ApplicationScoped
 class WebsocketController {
+    // Injected class
     @Inject
     lateinit var websocketService: WebsocketService
-    private val LOGGER: Logger = Logger.getLogger(this::class.toString())
+
+    // Logger
+    private val logger: Logger = Logger.getLogger(this::class.toString())
 
     /**
-     * onOpen starts a loop that sends the entire contents of the database to the connected webclient
+     * onOpen logs that a session has connected to the websocket and adds them to the connected sessions queue.
      */
     @OnOpen
     fun onOpen(session: Session) {
         websocketService.readers.add(session)
-        LOGGER.info("Reader connected to websocket at session: $session")
-        // Sends all logs to the user that are stored in the database
-        websocketService.initLogs(session).subscribe()
+        logger.info("Reader connected to websocket at session: $session")
     }
 
+    /**
+     * onClose() logs that a session has disconnected from the websocket and removes them from the connected sessions queue.
+     */
     @OnClose
     fun onClose(session: Session) {
         websocketService.readers.remove(session)
-        LOGGER.info("Reader disconnected from websocket with session: $session")
+        logger.info("Reader disconnected from websocket with session: $session")
     }
 
+    /**
+     * onError logs any errors that occur during websocket use, then closes the connection.
+     */
     @OnError
     fun onError(session: Session, throwable: Throwable) {
-        LOGGER.info("session ${session.id} disconnected from websocket due to error: $throwable")
+        logger.info("session ${session.id} disconnected from websocket due to error: $throwable")
         session.close()
-        }
     }
+}

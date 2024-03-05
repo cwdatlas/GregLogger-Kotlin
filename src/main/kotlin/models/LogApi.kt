@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size
 import org.jboss.resteasy.reactive.DateFormat
 import java.time.LocalDate
 
-
+// codes provide a constant set of feedback for the user
 const val codes =
     "ENABLED -> machine enabled, " +
             "STARTED -> machine started normally, " +
@@ -14,7 +14,15 @@ const val codes =
             "STOPPED -> machine stopped doing work, " +
             "DISABLED -> machine disabled, " +
             "FORCE_DISABLED -> machine disabled due to a non-optimal situation (starved usually)"
+
+/**
+ * @author Aidan Scott
+ * LogApi is the validation model for the HorizonLog entity model.
+ * This is where all validations take place, and are where feedback is stored.
+ * If you want to see more about what each value does, go to HorizonLog
+ */
 class LogApi {
+    // Dates must be in this pattern if they are not, then the data will be sent back signaling that the data is wrong
     @setparam:DateFormat(pattern = "YYYY-MM-DD")
     lateinit var date: LocalDate
 
@@ -35,6 +43,7 @@ class LogApi {
     @Size(max = 100, message = "message length must be less than 100 characters")
     @Size(min = 1, message = "message length must be more than 0 characters")
     lateinit var message: String
+
 
     // TODO Change to enum
     @NotNull(message = "operationCode must be included. Codes: $codes")
